@@ -1,5 +1,6 @@
 /******************************************
 *Rafael Silva de Milhã		NºUSP: 8139701*
+*Leonardo Mendes Bonato     NºUSP: 9074308*
 ******************************************/
 
 /*********************************************
@@ -74,6 +75,29 @@ void M2() {
         //envia msg
         return;
 }
+
+/*
+    CADA FUNÇÃO É EXECUTADA POR UMA CONEXÃO DIFERENTE
+*/
+void dostuff (int sock)
+{
+   int n;
+   char buffer[256];
+
+   while(true){
+        //printf("\033[2J");
+        //printf("\033[0;0f");
+        bzero(buffer,256);
+        n = read(sock,buffer,255);
+        if (n < 0)
+            cout << "Erro ao ler o socket";
+        //mostra os valores dos sensores
+        cout << buffer;
+        //sleep(1);
+    }
+}
+
+
 void Central() {
     int sockfd, newsockfd; //array subscripts into the file descriptor table
     int port_num = 51717; //numero da porta do servidor
@@ -101,24 +125,31 @@ void Central() {
     //bloqueia o processo até receber uma conexao com um cliente
     newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 
+    //aceita varias conexões, já que esta em um loop infinito
+    while (1) { 
+         newsockfd = accept(sockfd, 
+               (struct sockaddr *) &cli_addr, &clilen);
+         if (newsockfd < 0) 
+             cout << "Error Socket";
+         int pid = fork();
+         if (pid < 0)
+             cout << "Error on Fork";
+         if (pid == 0)  {
+             close(sockfd);
+             dostuff(newsockfd);
+             exit(0);
+         }
+         else close(newsockfd);
+     }
+
     if (newsockfd < 0)
         cout << "Erro ao aceitar o cliente";
 
-    int s1, s2, s3, s4, s5, s6, m1, m2;
-    while(true){
-        printf("\033[2J");
-        printf("\033[0;0f");
-        bzero(buffer,256);
-        n = read(newsockfd,buffer,255);
-        if (n < 0)
-            cout << "Erro ao ler o socket";
-        //mostra os valores dos sensores
-        cout << "S1) " << buffer << "S2) " << s2 << "\nS3) " << s3 << "\nS4) " << s4 << "\nS5) " << s5 << "\nS6) " << s6 << "\nM1) " << m1 << "\nM2) " << m2 << "\n";
-        sleep(1);
-    }
     close(sockfd);
     close(newsockfd);
 }
+
+
 
 int main()
 {
