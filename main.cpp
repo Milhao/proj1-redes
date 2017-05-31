@@ -1,55 +1,88 @@
 #include <stdio.h>
 #include <iostream>
+#include <ctype.h>
+#include <string.h>
 #include "./cpp/central.h"
 
 using namespace std;
 
-int main() {
-	int a;
+enum COMMAND {
+	NOT_A_COMMAND,
+	ENTER,
+	HELP,
+	CONFIG,
+	CONNECT,
+	DISCONNECT,
+	VIRTUAL,
+	QUIT
+};
+
+void strtolower(char * s) {
+	for(int i=0; s[i]; i++)
+		s[i] = tolower(s[i]);
+}
+
+int readstr(char * s, int n) {
+	int i;
+	for(i=0; i < n && EOF != (s[i] = fgetc(stdin)) && '\n' != s[i]; i++);
+	if(i == n) {
+		i--;
+		while(EOF != (s[i] = fgetc(stdin)) && '\n' != s[i]);
+	}
+	s[i] = 0;
+	return i;
+}
+
+enum COMMAND readCommand() {
+	char s[11];
+
+	readstr(s, 11);
+	strtolower(s);
+
+	if(!strlen(s))
+		return ENTER;
+	else if(!strcmp(s, "connect"))
+		return CONNECT;
+	else if(!strcmp(s, "config"))
+		return CONFIG;
+	else if(!strcmp(s, "disconnect"))
+		return DISCONNECT;
+	else if(!strcmp(s, "help"))
+		return HELP;
+	else if(!strcmp(s, "quit"))
+		return QUIT;
+	else if(!strcmp(s, "virtual"))
+		return VIRTUAL;
+	return NOT_A_COMMAND;
+}
+
+int main(int argc, char * argv[]) {
 	Central c1;
 	enum COMMAND cmd;
 
-	while(QUIT != (cmd = c1.getCommand())) {
+	while(QUIT != (cmd = readCommand())) {
 		switch(cmd) {
 			case HELP:
-				cout << "HELP\t\tMostra este manual.\n\nCONFIG\t\tConfiguração de porta de conexão.\n\tALL\t\tMostra a configuração de todas as portas.\n\nCONNECT\t\tConecta com sensor.\n\tALL\t\tConecta com todos os sensores.\n\nDISCONNECT\tDesconecta de sensor.\n\tALL\t\tDesconecta de todos os senores.\n\nVIRTUAL\t\tAtiva sensor virtual (os sensores físicos correspondentes devem estar conectados).\n\tALL\t\tAtiva todos os sensores virtuais.\n\nQUIT\t\tDesconectar tudo e sair.\n";
+				cout << "HELP\t\tMostra esta ajuda.\n\nCONFIG\t\tConfiguração das portas.\n\nCONNECT\t\tConecta com sensores.\n\nDISCONNECT\tDesconecta dos sensores.\n\nVIRTUAL\t\tAtiva sensor virtual (os sensores físicos correspondentes devem estar conectados).\n\nQUIT\t\tDesconecta e sai.\n";
 				   break;
 			case CONFIG:
-				cmd = c1.getCommand();
-				switch(cmd) {
-					case ALL: for(int i = 0; i < 10; i++)
-							cout << "portno[" << i << "] = " << c1.getPortno(i) << "\n";
-					default: break;
-				 }
-				 break;
+				c1.printPortnos();
+				break;
 			case CONNECT:
-				cmd = c1.getCommand();
-				switch(cmd) {
-					case ALL: //std::thread s (sensor, portno[0]);
-						  //Criar threads e conectar sensores
-					default: break;
-				}
+				c1.connectSensors();
 				break;
 			case DISCONNECT:
-				cmd = c1.getCommand();
-				switch(cmd) {
-					case ALL: cout << "Desconectando...\n";
-						  //Desconectar
-					default: break;
-				}
+				c1.disconnectSensors();
 				break;
-			case VIRTUAL: //Mostrar os sensores virtuais, se possivel
-			default:
+			case VIRTUAL: //Mostra os sensores virtuais, se possível
+			case NOT_A_COMMAND:
 				cout << "Comando inválido. Digite \"help<ENTER>\" para ajuda.\n";
 				break;
 		}
 	}
 
 	cout << "Fechando...\n";
-	//Desconectar
-	//
-	//
-	//
+	c1.disconnectSensors();
 	cout << "Pronto.\n";
 
 	return 0;

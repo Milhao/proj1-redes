@@ -1,33 +1,22 @@
-#ifndef CENTRAL_H
-#define CENTRAL_H
+#ifndef __CENTRAL_H__
+#define __CENTRAL_H__
 
-enum MESSAGE {
-	CONFIRM = 1,
-	IDENTIFY,
-	NEXT,
-	RESEND,
-	CLOSE
-};
+#include <vector>
+#include <thread>
 
-enum COMMAND {
-	NOT_A_COMMAND,
-	HELP,
-	CONFIG,
-	CONNECT,
-	DISCONNECT,
-	VIRTUAL,
-	ALL,
-	QUIT
-};
+class Central {
+	int conn;
+	std::vector<int> portno;
+	std::vector<std::thread> s;
 
-class Central {	
-	int portno[8];
+	void error(const char *msg);
+	void sensor(int i);
 public:
 	Central();
-	void setPortno(int port, int ind);
 	int getPortno(int ind);
-	void error(const char *msg);
-	enum COMMAND getCommand();
+	void connectSensors();
+	void disconnectSensors();
+	void printPortnos();
 };
 
 #endif

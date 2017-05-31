@@ -1,19 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
+#include <iostream>
 #include <string.h>
+#include <unistd.h>
+#include <sys/types.h> 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include "conn.h"
 #include "central.h"
 
 using namespace std;
 
 Central :: Central(){
-	int port = 51711;
-	for(int i = 0; i < 8; i++, port++)
-		portno[i] = port;
-}
-
-void Central :: setPortno(int port, int ind){
-	portno[ind] = port;
+	conn = 0;
+	portno.assign(PORTS);
+	s.resize(portno.size());
 }
 
 int Central :: getPortno(int ind){
@@ -25,41 +27,86 @@ void Central :: error(const char *msg){
 	exit(1);
 }
 
-void strtolower(char * s) {
-	for(int i=0; s[i]; i++)
-		s[i] = tolower(s[i]);
-}
+void Central :: sensor(int i) {
+	int sockfd, n;
+	struct sockaddr_in serv_addr;
+	struct hostent *server;
+	char buffer[BUFFER_SIZE];
+	char * name;
 
-int getWord(char * s, int n) {
-	int i;
-	for(i=0; i < n && EOF != (s[i] = fgetc(stdin)) && '\n' != s[i] && ' ' != s[i]; i++);
-	if(i == n) {
-		i--;
-		while(EOF != (s[i] = fgetc(stdin)) && '\n' != s[i] && ' ' != s[i]);
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	if(sockfd < 0) 
+		error("ERRO ao abrir socket.\n");
+	server = gethostbyname(HOSTNAME);
+	if(server == NULL) {
+		fprintf(stderr,"ERRO, host inexistente.\n");
+		return;
 	}
-	s[i] = 0;
-	return i;
+	bzero((char *) &serv_addr, sizeof(serv_addr));
+	serv_addr.sin_family = AF_INET;
+	bcopy((char *) server->h_addr, (char *) &serv_addr.sin_addr.s_addr, server->h_length);
+	serv_addr.sin_port = htons(portno[i]);
+
+	while(connect(sockfd, (struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
+		if(!conn) {
+			printf("s%d fechado.\n", i);
+			return;
+		}
+	}
+
+	bzero(buffer, BUFFER_SIZE);
+	*((int *) buffer) = IDENTIFY;
+	n = write(sockfd, buffer, sizeof(enum MESSAGE));
+
+	bzero(buffer, BUFFER_SIZE);
+	n = read(sockfd, buffer, BUFFER_SIZE);
+	name = (char *) malloc((strlen(buffer)+1)*sizeof(char));
+	strcpy(name, buffer);
+	printf("Sensor %s conectado.\n", name);
+
+	do {
+		if(!conn) {
+			bzero(buffer, BUFFER_SIZE);
+			*((int *) buffer) = CLOSE;
+			n = write(sockfd, buffer, sizeof(enum MESSAGE));
+			bzero(buffer, BUFFER_SIZE);
+			n = read(sockfd, buffer, BUFFER_SIZE);
+			if(*((int *) buffer) == CONFIRM)
+				continue;
+			else
+				break;
+		}
+		bzero(buffer, BUFFER_SIZE);
+		*((int *) buffer) = NEXT;
+		n = write(sockfd, buffer, sizeof(enum MESSAGE));
+
+		bzero(buffer, BUFFER_SIZE);
+		n = read(sockfd, buffer, BUFFER_SIZE);
+		printf("%s  %lf\n", name, *((double *) buffer));
+	} while(n > 0);
+
+	close(sockfd);
+	printf("Sensor %s desconectado.\n", name);
+	free(name);
 }
 
-enum COMMAND Central :: getCommand() {
-	char s[11];
+void Central :: connectSensors() {
+	if(!conn) {
+		conn = 1;
+		for(int i=0; i<(int) s.size(); i++)
+			s[i] = std::thread(&Central::sensor, this, i);
+	}
+}
 
-	getWord(s, 11);
-	strtolower(s);
+void Central :: disconnectSensors() {
+	if(conn) {
+		conn = 0;
+		for(int i=0; i<(int) s.size(); i++)
+			s[i].join();
+	}
+}
 
-	if(!strcmp(s, "all"))
-		return ALL;
-	else if(!strcmp(s, "conect"))
-		return CONNECT;
-	else if(!strcmp(s, "config"))
-		return CONFIG;
-	else if(!strcmp(s, "disconnect"))
-		return DISCONNECT;
-	else if(!strcmp(s, "help"))
-		return HELP;
-	else if(!strcmp(s, "quit"))
-		return QUIT;
-	else if(!strcmp(s, "virtual"))
-		return VIRTUAL;
-	return NOT_A_COMMAND;
+void Central :: printPortnos() {
+	for(int i=0; i<(int) portno.size(); i++)
+		cout << "s" << i << " = " << portno[i] << "\n";
 }
