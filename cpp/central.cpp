@@ -6,6 +6,7 @@
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <ctype.h>
 #include <netdb.h>
 #include "conn.h"
 #include "central.h"
