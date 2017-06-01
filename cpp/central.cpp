@@ -18,6 +18,10 @@ Central :: Central(){
 	s.resize(portno.size());
 }
 
+void Central :: setPortno(int port, int ind){
+	portno[ind] = port;
+}
+
 int Central :: getPortno(int ind){
 	return portno[ind];
 }
@@ -64,6 +68,7 @@ void Central :: sensor(int i) {
 	strcpy(name, buffer);
 	printf("Sensor %s conectado.\n", name);
 
+	int out = 0;
 	do {
 		if(!conn) {
 			bzero(buffer, BUFFER_SIZE);
@@ -73,8 +78,9 @@ void Central :: sensor(int i) {
 			n = read(sockfd, buffer, BUFFER_SIZE);
 			if(*((int *) buffer) == CONFIRM)
 				continue;
-			else
+			else if((*((int *) buffer) != CONFIRM) || out > 10)
 				break;
+			out++;
 		}
 		bzero(buffer, BUFFER_SIZE);
 		*((int *) buffer) = NEXT;
