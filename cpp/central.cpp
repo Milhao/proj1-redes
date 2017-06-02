@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <ctype.h>
 #include <netdb.h>
+#include <sstream>
 #include "conn.h"
 #include "central.h"
 
@@ -16,7 +17,8 @@ using namespace std;
 Central :: Central(){
 	conn = 0;
 	portno.assign(PORTS);
-	s.resize(portno.size());
+	s.resize(portno.size() + 1);
+	sensorValue.resize(portno.size());
 }
 
 void Central :: setPortno(int port, int ind){
@@ -30,6 +32,15 @@ int Central :: getPortno(int ind){
 void Central :: error(const char *msg){
 	perror(msg);
 	exit(1);
+}
+
+void Central :: showValues(){
+	while(conn){
+		cout << "\033[2J" << "\033[0;0f";
+		sleep(1);
+		for(int i = 0; i < 8; i++)
+			cout << names[i] << ": " << sensorValue[i] << "\n";
+	}
 }
 
 void Central :: sensor(int i) {
@@ -68,6 +79,7 @@ void Central :: sensor(int i) {
 	name = (char *) malloc((strlen(buffer)+1)*sizeof(char));
 	strcpy(name, buffer);
 	cout << "Sensor "<< name <<" conectado.\n";
+	names.push_back(name);
 
 	int out = 0;
 	do {
@@ -91,9 +103,10 @@ void Central :: sensor(int i) {
 
 		bzero(buffer, BUFFER_SIZE);
 		n = read(sockfd, buffer, BUFFER_SIZE);
+		sensorValue[i] = *((double *) buffer);
 		//precisa concertar http://www.termsys.demon.co.uk/vtansi.htm#cursor
-		cout << "\033[" << i << ";0H\033[1K" << name << *((double *) buffer) << "\n";
-		//cout << name << *((double *) buffer) << "\n";
+		//cout << "\033[" << i << ";0H\033[1K" << name << *((double *) buffer) << "\n";
+		//cout << name << sensorValue[i] << "\n";
 	} while(n > 0);
 
 	close(sockfd);
@@ -104,15 +117,16 @@ void Central :: sensor(int i) {
 void Central :: connectSensors() {
 	if(!conn) {
 		conn = 1;
-		for(int i=0; i<(int) s.size(); i++)
-			s[i] = std::thread(&Central::sensor, this, i);
+		for(int i=0; i<(int) s.size() - 1; i++)
+			s[i] = thread(&Central::sensor, this, i);
+		s[s.size() - 1] = thread(&Central::showValues, this);
 	}
 }
 
 void Central :: disconnectSensors() {
 	if(conn) {
 		conn = 0;
-		for(int i=0; i<(int) s.size(); i++)
+		for(int i=0; i<(int) s.size() - 1; i++)
 			s[i].join();
 	}
 }

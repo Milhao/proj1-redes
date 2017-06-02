@@ -59,7 +59,7 @@ enum COMMAND readCommand() {
 int main(int argc, char * argv[]) {
 	Central c1;
 	enum COMMAND cmd;
-
+	thread t1;
 	while(QUIT != (cmd = readCommand())) {
 		switch(cmd) {
 			case HELP:

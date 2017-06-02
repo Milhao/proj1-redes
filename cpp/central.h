@@ -11,6 +11,8 @@ private:
 	int conn;
 	vector<int> portno;
 	vector<thread> s;
+	vector<double> sensorValue;
+	vector<const char *> names;
 	void error(const char *msg);
 	void sensor(int i);
 public:
@@ -20,6 +22,7 @@ public:
 	void connectSensors();
 	void disconnectSensors();
 	void printPortnos();
+	void showValues();
 };
 
 #endif
