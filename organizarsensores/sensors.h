@@ -4,16 +4,20 @@
 #include <vector>
 #include <thread>
 
+using namespace std;
+
 class Sensors {	
 	int run;
-	std::vector<int> portno;
-	std::vector<std::thread> s;
+	vector<int> portno;
+	vector<const char *> names;
+	vector<thread> s;
 public:
 	Sensors();
 	void setPortno(int port, int ind);
 	int getPortno(int ind);
 	void setRun(int run);
 	int getRun();
+	void showNames();
 	void gps();
 	void variometer();
 	void pitot();
@@ -22,7 +26,8 @@ public:
 	void laser();
 	void barometer();
 	void cardiac();
-	void sensor_socket(char * name, int portno, double (*sensor)());
+	void sensor_socket(int ind);
+	double aleatorio();
 };
 
 #endif

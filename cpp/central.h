@@ -4,11 +4,13 @@
 #include <vector>
 #include <thread>
 
+using namespace std;
+
 class Central {
 private:
 	int conn;
-	std::vector<int> portno;
-	std::vector<std::thread> s;
+	vector<int> portno;
+	vector<thread> s;
 	void error(const char *msg);
 	void sensor(int i);
 public:

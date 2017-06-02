@@ -79,8 +79,10 @@ void Central :: sensor(int i) {
 			n = read(sockfd, buffer, BUFFER_SIZE);
 			if(*((int *) buffer) == CONFIRM)
 				continue;
-			else if((*((int *) buffer) != CONFIRM) || out > 10)
+			else if((*((int *) buffer) != CONFIRM) || out > 10){
+				cout << out;
 				break;
+			}
 			out++;
 		}
 		bzero(buffer, BUFFER_SIZE);

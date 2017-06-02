@@ -11,45 +11,46 @@
 
 using namespace std;
 
-double aleatorio() {
-    return rand() / rand();
+double Sensors :: aleatorio() {
+    return ((double)rand()) / rand();
 }
 
 void Sensors :: gps() {
-    s[1] = thread(&Sensors :: sensor_socket, this, "GPS", portno[1], aleatorio);
+    s[0] = thread(&Sensors :: sensor_socket, this, 0);
 }
 
 void Sensors :: variometer() {
-    s[2] = thread(&Sensors :: sensor_socket, this, "Variometro", portno[2], aleatorio);
+    s[1] = thread(&Sensors :: sensor_socket, this, 1);
 }
 
 void Sensors :: pitot() {
-    s[3] = thread(&Sensors :: sensor_socket, this, "Pitot", portno[3], aleatorio);
+    s[2] = thread(&Sensors :: sensor_socket, this, 2);
 }
 
 void Sensors :: gyroscope() {
-	s[4] = thread(&Sensors :: sensor_socket, this, "Giroscopio", portno[4], aleatorio);
+	s[3] = thread(&Sensors :: sensor_socket, this, 3);
 }
 
 void Sensors :: fuel() {
-    s[5] = thread(&Sensors :: sensor_socket, this, "Combustivel", portno[5], aleatorio);
+    s[4] = thread(&Sensors :: sensor_socket, this, 4);
 }
 
 void Sensors :: laser() {
-    s[6] = thread(&Sensors :: sensor_socket, this, "Laser", portno[6], aleatorio);
+    s[5] = thread(&Sensors :: sensor_socket, this, 5);
 }
 
 void Sensors :: barometer() {
-    s[7] = thread(&Sensors :: sensor_socket, this, "Barometro", portno[7], aleatorio);
+    s[6] = thread(&Sensors :: sensor_socket, this, 6);
 }
 
 void Sensors :: cardiac() {
-    s[8] = thread(&Sensors :: sensor_socket, this, "Cardiaco", portno[8], aleatorio);
+    s[7] = thread(&Sensors :: sensor_socket, this, 7);
 }
 
 Sensors :: Sensors(){
 	run = 1;
 	portno.assign(PORTS);
+	names.assign(NAMES);
 	s.resize(portno.size());
 	gps();
 	variometer();
@@ -77,7 +78,12 @@ int Sensors :: getRun(){
 	return run;
 }
 
-void Sensors :: sensor_socket(char * name, int portno, double (*sensor)()) {
+void Sensors :: showNames(){
+	for(int i = 0; i < 8; i++)
+		cout << names[i];
+}
+
+void Sensors :: sensor_socket(int ind) {
 	int sockfd, newsockfd;
 	socklen_t clilen;
 	char buffer[256];
@@ -94,7 +100,7 @@ void Sensors :: sensor_socket(char * name, int portno, double (*sensor)()) {
 	bzero((char *) &serv_addr, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
-	serv_addr.sin_port = htons(portno);
+	serv_addr.sin_port = htons(portno[ind]);
 
 	if(bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
 		perror("ERRO ao associar");
@@ -117,10 +123,10 @@ void Sensors :: sensor_socket(char * name, int portno, double (*sensor)()) {
 			msg = *((enum MESSAGE *) buffer);
 			switch(msg) {
 				case IDENTIFY:
-					n = write(newsockfd, name, strlen(name));
+					n = write(newsockfd, names[ind], strlen(names[ind]));
 					break;
 				case NEXT:
-					*buffer = sensor();
+					*((double *)buffer) = aleatorio();
 				case RESEND:
 					n = write(newsockfd, buffer, sizeof(double));
 					break;
@@ -130,7 +136,7 @@ void Sensors :: sensor_socket(char * name, int portno, double (*sensor)()) {
 				default:
 					break;
 			}
-		} while(msg != CLOSE);
+		} while(run && msg != CLOSE);
 		close(newsockfd);
 	}
 
