@@ -51,6 +51,7 @@ Sensors :: Sensors(){
 	run = 1;
 	portno.assign(PORTS);
 	names.assign(NAMES);
+	sockets.resize(portno.size());
 	s.resize(portno.size());
 	gps();
 	variometer();
@@ -83,8 +84,16 @@ void Sensors :: showNames(){
 		cout << names[i];
 }
 
+void Sensors :: closeSensors(){
+	run = 0;
+	sleep(1);
+	for(int i = 0; i < sockets.size(); i++){
+		s[i].detach();
+	}
+}
+
 void Sensors :: sensor_socket(int ind) {
-	int sockfd, newsockfd;
+	int sockfd;
 	socklen_t clilen;
 	char buffer[256];
 	struct sockaddr_in serv_addr, cli_addr;
@@ -110,34 +119,36 @@ void Sensors :: sensor_socket(int ind) {
 	clilen = sizeof(cli_addr);
 
 	while(run) {
-		newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-		if (newsockfd < 0) {
+		sockets[ind] = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+		cout << names[ind] << " conneted...\n";
+		if (sockets[ind] < 0) {
 			cout << "ERRO ao aceitar";
 			continue;
 		}
 
 		do {
 			//Erros de leitura ou escrita não estão sendo tratados
-			bzero(buffer, 256);
-			n = read(newsockfd, buffer, 255);
+			bzero(buffer, BUFFER_SIZE);
+			n = read(sockets[ind], buffer, BUFFER_SIZE - 1);
 			msg = *((enum MESSAGE *) buffer);
 			switch(msg) {
 				case IDENTIFY:
-					n = write(newsockfd, names[ind], strlen(names[ind]));
+					n = write(sockets[ind], names[ind], strlen(names[ind]));
 					break;
 				case NEXT:
 					*((double *)buffer) = aleatorio();
 				case RESEND:
-					n = write(newsockfd, buffer, sizeof(double));
+					n = write(sockets[ind], buffer, sizeof(double));
 					break;
 				case CLOSE:
 					*buffer = CONFIRM;
-					n = write(newsockfd, buffer, sizeof(enum MESSAGE));
+					n = write(sockets[ind], buffer, sizeof(enum MESSAGE));
 				default:
 					break;
 			}
 		} while(run && msg != CLOSE);
-		close(newsockfd);
+		close(sockets[ind]);
+		cout << names[ind] << " disconneted...\n";
 	}
 
 	close(sockfd);

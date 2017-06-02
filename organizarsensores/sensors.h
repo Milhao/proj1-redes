@@ -9,6 +9,7 @@ using namespace std;
 class Sensors {	
 	int run;
 	vector<int> portno;
+	vector<int> sockets;
 	vector<const char *> names;
 	vector<thread> s;
 public:
@@ -18,6 +19,7 @@ public:
 	void setRun(int run);
 	int getRun();
 	void showNames();
+	void closeSensors();
 	void gps();
 	void variometer();
 	void pitot();

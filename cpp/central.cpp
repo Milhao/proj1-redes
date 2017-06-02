@@ -54,7 +54,7 @@ void Central :: sensor(int i) {
 
 	while(connect(sockfd, (struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
 		if(!conn) {
-			printf("s%d fechado.\n", i);
+			cout << "s" << i << " fechado.\n";
 			return;
 		}
 	}
@@ -67,7 +67,7 @@ void Central :: sensor(int i) {
 	n = read(sockfd, buffer, BUFFER_SIZE);
 	name = (char *) malloc((strlen(buffer)+1)*sizeof(char));
 	strcpy(name, buffer);
-	printf("Sensor %s conectado.\n", name);
+	cout << "Sensor "<< name <<" conectado.\n";
 
 	int out = 0;
 	do {
@@ -91,11 +91,13 @@ void Central :: sensor(int i) {
 
 		bzero(buffer, BUFFER_SIZE);
 		n = read(sockfd, buffer, BUFFER_SIZE);
-		printf("%s  %lf\n", name, *((double *) buffer));
+		//precisa concertar http://www.termsys.demon.co.uk/vtansi.htm#cursor
+		cout << "\033[" << i << ";0H\033[1K" << name << *((double *) buffer) << "\n";
+		//cout << name << *((double *) buffer) << "\n";
 	} while(n > 0);
 
 	close(sockfd);
-	printf("Sensor %s desconectado.\n", name);
+	cout << "Sensor "<< name << " desconectado.\n";
 	free(name);
 }
 
