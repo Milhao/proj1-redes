@@ -35,9 +35,16 @@ void Central :: error(const char *msg){
 }
 
 void Central :: showValues(){
+	int first = 1;
 	while(conn){
-		cout << "\033[2J" << "\033[0;0f";
-		sleep(1);
+		if(first){
+			sleep(1);
+			cout << "\033[2J\033[0;0f";
+			first = 0;
+		} else {
+			sleep(1);
+			cout << "\033[2A\033[1J\033[0;0f";	
+		}
 		for(int i = 0; i < 8; i++)
 			cout << names[i] << ": " << sensorValue[i] << "\n";
 	}
