@@ -8,33 +8,6 @@
 
 using namespace std;
 
-enum COMMAND {
-	NOT_A_COMMAND,
-	ENTER,
-	HELP,
-	CONFIG,
-	CONNECT,
-	DISCONNECT,
-	VIRTUAL,
-	QUIT
-};
-
-void strtolower(char * s) {
-	for(int i=0; s[i]; i++)
-		s[i] = tolower(s[i]);
-}
-
-int readstr(char * s, int n) {
-	int i;
-	for(i=0; i < n && EOF != (s[i] = fgetc(stdin)) && '\n' != s[i]; i++);
-	if(i == n) {
-		i--;
-		while(EOF != (s[i] = fgetc(stdin)) && '\n' != s[i]);
-	}
-	s[i] = 0;
-	return i;
-}
-
 char getch() {
         char buf = 0;
         struct termios old = {0};
