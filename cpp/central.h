@@ -15,10 +15,6 @@ private:
 	vector<double> sensorValue;
 	vector<string> names;
 	void error(const char *msg);
-	void virtualSensor1();
-	void virtualSensor2();
-	void virtualSensor3();
-	void virtualSensor4();
 	void sensor(int i);
 public:
 	Central();

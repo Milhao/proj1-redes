@@ -17,9 +17,9 @@ using namespace std;
 Central :: Central(){
 	conn = 0;
 	portno.assign(PORTS);
-	s.resize(portno.size() + 5);
-	sensorValue.resize(portno.size()+4);
-	names.resize(portno.size()+4);
+	s.resize(portno.size() + 1);
+	sensorValue.resize(portno.size());
+	names.resize(portno.size());
 }
 
 void Central :: setPortno(int port, int ind){
@@ -48,32 +48,12 @@ void Central :: showValues(){
 		}
 		for(int i = 0; i < names.size(); i++)
 			cout << names[i] << ": " << sensorValue[i] << "\n";
+		cout << "Radar: " << (sensorValue[0] + sensorValue[2] + sensorValue[3])/3 << "\n";
+		//cout << "Pouso seguro: " << ((sensorValue[1] + sensorValue[2])/2 < 2.0 && sensorValue[5] < 2.0) << "\n";
+		cout << "Estimativa de combustível: " << (sensorValue[1] + sensorValue[2] + sensorValue[4])/3 << "\n";
+		cout << "Pressão interna: " << (sensorValue[1] + sensorValue[6] + sensorValue[7])/3 << "\n";
 		cout << "\033[u";
 	}
-}
-
-void Central :: virtualSensor1() {
-	names[names.size() - 4].assign("virtual1");
-	while(conn)
-		sensorValue[sensorValue.size() - 4] = 0;
-}
-
-void Central :: virtualSensor2() {
-	names[names.size() - 3].assign("virtual2");
-	while(conn)
-		sensorValue[sensorValue.size() - 3] = 0;
-}
-
-void Central :: virtualSensor3() {
-	names[names.size() - 2].assign("virtual3");
-	while(conn)
-		sensorValue[sensorValue.size() - 2] = 0;
-}
-
-void Central :: virtualSensor4() {
-	names[names.size() - 1].assign("virtual4");
-	while(conn)
-		sensorValue[sensorValue.size() - 1] = 0;
 }
 
 void Central :: sensor(int i) {
@@ -145,12 +125,8 @@ void Central :: sensor(int i) {
 void Central :: connectSensors() {
 	if(!conn) {
 		conn = 1;
-		for(int i=0; i<(int) s.size() - 5; i++)
+		for(int i=0; i<(int) s.size() - 1; i++)
 			s[i] = thread(&Central::sensor, this, i);
-		s[s.size() - 5] = thread(&Central::virtualSensor1, this);
-		s[s.size() - 4] = thread(&Central::virtualSensor2, this);
-		s[s.size() - 3] = thread(&Central::virtualSensor3, this);
-		s[s.size() - 2] = thread(&Central::virtualSensor4, this);
 		s[s.size() - 1] = thread(&Central::showValues, this);
 	}
 }
