@@ -12,7 +12,7 @@ private:
 	vector<int> portno;
 	vector<thread> s;
 	vector<double> sensorValue;
-	vector<const char *> names;
+	vector<char *> names;
 	void error(const char *msg);
 	void sensor(int i);
 public:
