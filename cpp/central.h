@@ -1,6 +1,7 @@
 #ifndef __CENTRAL_H__
 #define __CENTRAL_H__
 
+#include <string>
 #include <vector>
 #include <thread>
 
@@ -12,8 +13,12 @@ private:
 	vector<int> portno;
 	vector<thread> s;
 	vector<double> sensorValue;
-	vector<char *> names;
+	vector<string> names;
 	void error(const char *msg);
+	void virtualSensor1();
+	void virtualSensor2();
+	void virtualSensor3();
+	void virtualSensor4();
 	void sensor(int i);
 public:
 	Central();

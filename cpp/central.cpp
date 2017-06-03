@@ -17,8 +17,9 @@ using namespace std;
 Central :: Central(){
 	conn = 0;
 	portno.assign(PORTS);
-	s.resize(portno.size() + 1);
-	sensorValue.resize(portno.size());
+	s.resize(portno.size() + 5);
+	sensorValue.resize(portno.size()+4);
+	names.resize(portno.size()+4);
 }
 
 void Central :: setPortno(int port, int ind){
@@ -45,10 +46,34 @@ void Central :: showValues(){
 			sleep(1);
 			cout << "\033[2A\033[1J\033[0;0f";	
 		}
-		for(int i = 0; i < 8; i++)
+		for(int i = 0; i < names.size(); i++)
 			cout << names[i] << ": " << sensorValue[i] << "\n";
 		cout << "\033[u";
 	}
+}
+
+void Central :: virtualSensor1() {
+	names[names.size() - 4].assign("virtual1");
+	while(conn)
+		sensorValue[sensorValue.size() - 4] = 0;
+}
+
+void Central :: virtualSensor2() {
+	names[names.size() - 3].assign("virtual2");
+	while(conn)
+		sensorValue[sensorValue.size() - 3] = 0;
+}
+
+void Central :: virtualSensor3() {
+	names[names.size() - 2].assign("virtual3");
+	while(conn)
+		sensorValue[sensorValue.size() - 2] = 0;
+}
+
+void Central :: virtualSensor4() {
+	names[names.size() - 1].assign("virtual4");
+	while(conn)
+		sensorValue[sensorValue.size() - 1] = 0;
 }
 
 void Central :: sensor(int i) {
@@ -56,7 +81,6 @@ void Central :: sensor(int i) {
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
 	char buffer[BUFFER_SIZE];
-	char * name;
 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if(sockfd < 0) 
@@ -84,10 +108,8 @@ void Central :: sensor(int i) {
 
 	bzero(buffer, BUFFER_SIZE);
 	n = read(sockfd, buffer, BUFFER_SIZE);
-	name = (char *) malloc((strlen(buffer)+1)*sizeof(char));
-	strcpy(name, buffer);
-	cout << "Sensor "<< name <<" conectado.\n";
-	names.push_back(name);
+	cout << "Sensor "<< buffer <<" conectado.\n";
+	names[i].assign(buffer);
 
 	int out = 0;
 	do {
@@ -97,13 +119,12 @@ void Central :: sensor(int i) {
 			n = write(sockfd, buffer, sizeof(enum MESSAGE));
 			bzero(buffer, BUFFER_SIZE);
 			n = read(sockfd, buffer, BUFFER_SIZE);
-			if(*((int *) buffer) == CONFIRM)
-				continue;
-			else if((*((int *) buffer) != CONFIRM) || out > 10){
-				cout << out;
+			if(*((int *) buffer) == CONFIRM || out > 10)
 				break;
+			else {
+				out++;
+				continue;
 			}
-			out++;
 		}
 		bzero(buffer, BUFFER_SIZE);
 		*((int *) buffer) = NEXT;
@@ -118,15 +139,18 @@ void Central :: sensor(int i) {
 	} while(n > 0);
 
 	close(sockfd);
-	cout << "Sensor "<< name << " desconectado.\n";
-	free(name);
+	cout << "Sensor "<< names[i] << " desconectado.\n";
 }
 
 void Central :: connectSensors() {
 	if(!conn) {
 		conn = 1;
-		for(int i=0; i<(int) s.size() - 1; i++)
+		for(int i=0; i<(int) s.size() - 5; i++)
 			s[i] = thread(&Central::sensor, this, i);
+		s[s.size() - 5] = thread(&Central::virtualSensor1, this);
+		s[s.size() - 4] = thread(&Central::virtualSensor2, this);
+		s[s.size() - 3] = thread(&Central::virtualSensor3, this);
+		s[s.size() - 2] = thread(&Central::virtualSensor4, this);
 		s[s.size() - 1] = thread(&Central::showValues, this);
 	}
 }
@@ -136,7 +160,6 @@ void Central :: disconnectSensors() {
 		conn = 0;
 		for(int i = (int) s.size() - 1; i >= 0; i--)
 			s[i].join();
-		vector<char *> names;
 	}
 }
 
