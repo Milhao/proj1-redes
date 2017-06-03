@@ -134,7 +134,7 @@ void Central :: connectSensors() {
 void Central :: disconnectSensors() {
 	if(conn) {
 		conn = 0;
-		for(int i=0; i<(int) s.size(); i++)
+		for(int i = (int) s.size() - 1; i >= 0; i--)
 			s[i].join();
 		vector<char *> names;
 	}
