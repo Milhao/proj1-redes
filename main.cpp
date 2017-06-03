@@ -2,6 +2,8 @@
 #include <iostream>
 #include <ctype.h>
 #include <string.h>
+#include <unistd.h>
+#include <termios.h>
 #include "./cpp/central.h"
 
 using namespace std;
@@ -33,50 +35,68 @@ int readstr(char * s, int n) {
 	return i;
 }
 
-enum COMMAND readCommand() {
-	char s[11];
+char getch() {
+        char buf = 0;
+        struct termios old = {0};
+        if (tcgetattr(0, &old) < 0)
+                perror("tcsetattr()");
+        old.c_lflag &= ~ICANON;
+        old.c_lflag &= ~ECHO;
+        old.c_cc[VMIN] = 1;
+        old.c_cc[VTIME] = 0;
+        if (tcsetattr(0, TCSANOW, &old) < 0)
+                perror("tcsetattr ICANON");
+        if (read(0, &buf, 1) < 0)
+                perror ("read()");
+        old.c_lflag |= ICANON;
+        old.c_lflag |= ECHO;
+        if (tcsetattr(0, TCSADRAIN, &old) < 0)
+                perror ("tcsetattr ~ICANON");
+        return (buf);
+}
 
-	readstr(s, 11);
-	strtolower(s);
-
-	if(!strlen(s))
-		return ENTER;
-	else if(!strcmp(s, "connect"))
-		return CONNECT;
-	else if(!strcmp(s, "config"))
-		return CONFIG;
-	else if(!strcmp(s, "disconnect"))
-		return DISCONNECT;
-	else if(!strcmp(s, "help"))
-		return HELP;
-	else if(!strcmp(s, "quit"))
-		return QUIT;
-	else if(!strcmp(s, "virtual"))
-		return VIRTUAL;
-	return NOT_A_COMMAND;
+void printMenu(){
+	cout << "\t\tProjeto 1 - Redes de Computadores\n";
+	cout << "Pressione:\n";
+	cout << "\th -> para printar o menu novamente\n";
+	cout << "\tc -> para conectar os sensores\n";
+	cout << "\tp -> para printar a configuração das portas\n";
+	cout << "\td -> para desconectar os sensores\n";
+	cout << "\tl -> para limpar a tela\n";
+	cout << "\tq -> para desconectar os sensores e sair do programa\n";
 }
 
 int main(int argc, char * argv[]) {
 	Central c1;
-	enum COMMAND cmd;
+	char cmd;
+
+	printMenu();
+
 	thread t1;
-	while(QUIT != (cmd = readCommand())) {
+	while('q' != (cmd = getch())) {
 		switch(cmd) {
-			case HELP:
-				cout << "HELP\t\tMostra esta ajuda.\n\nCONFIG\t\tConfiguração das portas.\n\nCONNECT\t\tConecta com sensores.\n\nDISCONNECT\tDesconecta dos sensores.\n\nVIRTUAL\t\tAtiva sensor virtual (os sensores físicos correspondentes devem estar conectados).\n\nQUIT\t\tDesconecta e sai.\n";
-				   break;
-			case CONFIG:
+			case 'h':
+				printMenu();	
+				break;
+			case 'p':
 				c1.printPortnos();
 				break;
-			case CONNECT:
+			case 'c':
 				c1.connectSensors();
 				break;
-			case DISCONNECT:
+			case 'd':
 				c1.disconnectSensors();
+				printf("\033[H\033[J");
 				break;
-			case VIRTUAL: //Mostra os sensores virtuais, se possível
-			case NOT_A_COMMAND:
-				cout << "Comando inválido. Digite \"help<ENTER>\" para ajuda.\n";
+			case 'v': //Mostra os sensores virtuais, se possível
+				printMenu();
+				printf("\033[H\033[J");
+				break;
+			case 'l':
+				
+				break;
+			default:
+				cout << "Comando inválido. Pressione \"h\" para ajuda.\n";
 				break;
 		}
 	}
