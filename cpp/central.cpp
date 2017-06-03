@@ -47,6 +47,7 @@ void Central :: showValues(){
 		}
 		for(int i = 0; i < 8; i++)
 			cout << names[i] << ": " << sensorValue[i] << "\n";
+		cout << "\033[u";
 	}
 }
 
@@ -133,8 +134,9 @@ void Central :: connectSensors() {
 void Central :: disconnectSensors() {
 	if(conn) {
 		conn = 0;
-		for(int i=0; i<(int) s.size() - 1; i++)
+		for(int i=0; i<(int) s.size(); i++)
 			s[i].join();
+		vector<char *> names;
 	}
 }
 
